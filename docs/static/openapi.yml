@@ -74484,6 +74484,8 @@ definitions:
         type: string
       lender:
         type: string
+  loan.loan.MsgRequestLoanResponse:
+    type: object
   loan.loan.Params:
     type: object
     description: Params defines the parameters for the module.
