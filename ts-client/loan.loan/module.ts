@@ -8,9 +8,10 @@ import { IgniteClient } from "../client"
 import { MissingWalletError } from "../helpers"
 import { Api } from "./rest";
 import { MsgRequestLoan } from "./types/loan/loan/tx";
+import { MsgApproveLoan } from "./types/loan/loan/tx";
 
 
-export { MsgRequestLoan };
+export { MsgRequestLoan, MsgApproveLoan };
 
 type sendMsgRequestLoanParams = {
   value: MsgRequestLoan,
@@ -18,9 +19,19 @@ type sendMsgRequestLoanParams = {
   memo?: string
 };
 
+type sendMsgApproveLoanParams = {
+  value: MsgApproveLoan,
+  fee?: StdFee,
+  memo?: string
+};
+
 
 type msgRequestLoanParams = {
   value: MsgRequestLoan,
+};
+
+type msgApproveLoanParams = {
+  value: MsgApproveLoan,
 };
 
 
@@ -55,12 +66,34 @@ export const txClient = ({ signer, prefix, addr }: TxClientOptions = { addr: "ht
 			}
 		},
 		
+		async sendMsgApproveLoan({ value, fee, memo }: sendMsgApproveLoanParams): Promise<DeliverTxResponse> {
+			if (!signer) {
+					throw new Error('TxClient:sendMsgApproveLoan: Unable to sign Tx. Signer is not present.')
+			}
+			try {			
+				const { address } = (await signer.getAccounts())[0]; 
+				const signingClient = await SigningStargateClient.connectWithSigner(addr,signer,{registry, prefix});
+				let msg = this.msgApproveLoan({ value: MsgApproveLoan.fromPartial(value) })
+				return await signingClient.signAndBroadcast(address, [msg], fee ? fee : defaultFee, memo)
+			} catch (e: any) {
+				throw new Error('TxClient:sendMsgApproveLoan: Could not broadcast Tx: '+ e.message)
+			}
+		},
+		
 		
 		msgRequestLoan({ value }: msgRequestLoanParams): EncodeObject {
 			try {
 				return { typeUrl: "/loan.loan.MsgRequestLoan", value: MsgRequestLoan.fromPartial( value ) }  
 			} catch (e: any) {
 				throw new Error('TxClient:MsgRequestLoan: Could not create message: ' + e.message)
+			}
+		},
+		
+		msgApproveLoan({ value }: msgApproveLoanParams): EncodeObject {
+			try {
+				return { typeUrl: "/loan.loan.MsgApproveLoan", value: MsgApproveLoan.fromPartial( value ) }  
+			} catch (e: any) {
+				throw new Error('TxClient:MsgApproveLoan: Could not create message: ' + e.message)
 			}
 		},
 		
